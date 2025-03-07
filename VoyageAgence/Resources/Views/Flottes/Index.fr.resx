@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <data name="FleetManagement" xml:space="preserve">
+    <value>Gestion de la Flotte</value>
+  </data>
+  <data name="SearchByTypeOrPlate" xml:space="preserve">
+    <value>Rechercher par type ou matricule...</value>
+  </data>
+  <data name="Search" xml:space="preserve">
+    <value>Rechercher</value>
+  </data>
+  <data name="AddVehicle" xml:space="preserve">
+    <value>Ajouter un Véhicule</value>
+  </data>
+  <data name="Type" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="Plate" xml:space="preserve">
+    <value>Matricule</value>
+  </data>
+  <data name="Availability" xml:space="preserve">
+    <value>Disponibilité</value>
+  </data>
+  <data name="Actions" xml:space="preserve">
+    <value>Actions</value>
+  </data>
+  <data name="Save" xml:space="preserve">
+    <value>Enregistrer</value>
+  </data>
+</root>

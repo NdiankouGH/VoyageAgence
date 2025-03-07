@@ -1,0 +1,378 @@
+﻿@model IEnumerable<VoyageAgence.Models.Flotte>
+
+@{
+    ViewData["Title"] = "Gestion de la Flotte";
+}
+
+<h1>Gestion de la Flotte</h1>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="input-group">
+            <input type="text" id="searchInput" class="form-control" placeholder="Rechercher par type ou matricule..." />
+            <div class="input-group-append">
+                <button class="btn btn-outline-secondary" type="button" onclick="searchFlottes()">
+                    <i class="fa fa-search"></i> Rechercher
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 text-right">
+        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#createModal" onclick="clearCreateForm();">
+            <i class="fa fa-plus"></i> Ajouter un Véhicule
+        </button>
+    </div>
+</div>
+
+<div id="searchResults" class="mb-3" style="display: none;">
+    <div class="alert alert-info">
+        <span id="resultCount"></span>
+        <button type="button" class="close" onclick="clearSearch()">&times;</button>
+    </div>
+</div>
+
+<table class="table table-striped table-hover">
+    <thead class="thead-dark">
+        <tr>
+            <th>Type</th>
+            <th>Matricule</th>
+            <th>Disponibilité</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody id="flotteTableBody">
+    </tbody>
+</table>
+
+<!-- Create Modal -->
+<div class="modal fade" id="createModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Ajouter un Véhicule</h4>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="createForm">
+                    <div class="form-group">
+                        <label>Type</label>
+                        <input type="text" class="form-control" id="createType" required />
+                    </div>
+                    <div class="form-group">
+                        <label>Matricule</label>
+                        <input type="text" class="form-control" id="createMatricule" required />
+                    </div>
+                    <div class="form-group">
+                        <div class="custom-control custom-switch">
+                            <input type="checkbox" class="custom-control-input" id="createEstDisponible" checked />
+                            <label class="custom-control-label" for="createEstDisponible">Disponible</label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-primary" onclick="createFlotte();">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal fade" id="editModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Modifier un Véhicule</h4>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editForm">
+                    <input type="hidden" id="editId" />
+                    <div class="form-group">
+                        <label>Type</label>
+                        <input type="text" class="form-control" id="editType" required />
+                    </div>
+                    <div class="form-group">
+                        <label>Matricule</label>
+                        <input type="text" class="form-control" id="editMatricule" required />
+                    </div>
+                    <div class="form-group">
+                        <div class="custom-control custom-switch">
+                            <input type="checkbox" class="custom-control-input" id="editEstDisponible" />
+                            <label class="custom-control-label" for="editEstDisponible">Disponible</label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-primary" onclick="updateFlotte();">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+
+    <script>
+        $(document).ready(function () {
+            loadFlottes();
+            setupAutoComplete();
+        });
+
+        // Configuration de l'autocomplétion
+        function setupAutoComplete() {
+            $("#searchInput").autocomplete({
+                source: function(request, response) {
+                    $.ajax({
+                        url: "/Flottes/Search",
+                        type: "GET",
+                        data: { term: request.term },
+                        success: function(data) {
+                            response(data);
+                        }
+                    });
+                },
+                minLength: 2,
+                select: function(event, ui) {
+                    // Afficher directement les détails de l'élément sélectionné
+                    getFlotteById(ui.item.id);
+                    return false;
+                }
+            }).autocomplete("instance")._renderItem = function(ul, item) {
+                // Personnaliser l'affichage des éléments dans la liste déroulante
+                var disponibiliteClass = item.disponible ? "text-success" : "text-danger";
+                var disponibiliteText = item.disponible ? "Disponible" : "Non disponible";
+
+                return $("<li>")
+                    .append("<div><strong>" + item.label + "</strong><br>" +
+                            "<span class='" + disponibiliteClass + "'>" + disponibiliteText + "</span></div>")
+                    .appendTo(ul);
+            };
+        }
+
+        // Rechercher des flottes
+        function searchFlottes() {
+            var searchTerm = $("#searchInput").val();
+
+            if (searchTerm.trim() === "") {
+                loadFlottes();
+                $("#searchResults").hide();
+                return;
+            }
+
+            $.ajax({
+                url: "/Flottes/List",
+                type: "GET",
+                data: { searchTerm: searchTerm },
+                success: function(result) {
+                    updateTable(result);
+
+                    // Mettre à jour le message de résultats
+                    var count = result.length;
+                    var message = count + " résultat" + (count > 1 ? "s" : "") + " trouvé" + (count > 1 ? "s" : "") + " pour \"" + searchTerm + "\"";
+                    $("#resultCount").text(message);
+                    $("#searchResults").show();
+                },
+                error: function() {
+                    alert("Erreur lors de la recherche.");
+                }
+            });
+        }
+
+        // Effacer la recherche
+        function clearSearch() {
+            $("#searchInput").val("");
+            loadFlottes();
+            $("#searchResults").hide();
+        }
+
+        // Charger la liste des flottes
+        function loadFlottes() {
+            $.ajax({
+                url: "/Flottes/List",
+                type: "GET",
+                success: function(result) {
+                    updateTable(result);
+                },
+                error: function() {
+                    alert("Erreur lors du chargement des flottes.");
+                }
+            });
+        }
+
+        // Mettre à jour le tableau avec les résultats
+        function updateTable(flottes) {
+            var html = '';
+
+            if (flottes.length === 0) {
+                html = '<tr><td colspan="4" class="text-center">Aucun résultat trouvé</td></tr>';
+            } else {
+                $.each(flottes, function(key, item) {
+                    var disponibiliteClass = item.estDisponible ? "badge-success" : "badge-danger";
+                    var disponibiliteText = item.estDisponible ? "Disponible" : "Non disponible";
+
+                    html += '<tr>';
+                    html += '<td>' + item.type + '</td>';
+                    html += '<td>' + item.matricule + '</td>';
+                    html += '<td><span class="badge ' + disponibiliteClass + '">' + disponibiliteText + '</span></td>';
+                    html += '<td>' +
+                        '<button class="btn btn-sm btn-info mr-2" onclick="getFlotteById(' + item.id + ')"><i class="fa fa-edit"></i> Modifier</button>' +
+                        '<button class="btn btn-sm btn-danger" onclick="confirmDelete(' + item.id + ')"><i class="fa fa-trash"></i> Supprimer</button>' +
+                        '</td>';
+                    html += '</tr>';
+                });
+            }
+
+            $('#flotteTableBody').html(html);
+        }
+
+        // Confirmer la suppression
+        function confirmDelete(id) {
+            if (confirm("Voulez-vous vraiment supprimer ce véhicule ?")) {
+                deleteFlotte(id);
+            }
+        }
+
+        // Ajouter une nouvelle flotte
+        function createFlotte() {
+            var flotte = {
+                Type: $('#createType').val(),
+                Matricule: $('#createMatricule').val(),
+                EstDisponible: $('#createEstDisponible').is(':checked')
+            };
+
+            // Validation côté client
+            if (!flotte.Type || !flotte.Matricule) {
+                alert("Veuillez remplir tous les champs obligatoires.");
+                return;
+            }
+
+            $.ajax({
+                url: "/Flottes/Create",
+                type: "POST",
+                contentType: "application/json",
+                data: JSON.stringify(flotte),
+                success: function() {
+                    $('#createModal').modal('hide');
+                    loadFlottes();
+
+                    // Notification de succès
+                    showNotification("Véhicule ajouté avec succès !");
+                },
+                error: function(xhr) {
+                    var errorMessage = xhr.responseText || "Erreur lors de l'ajout du véhicule.";
+                    alert(errorMessage);
+                }
+            });
+        }
+
+        // Récupérer une flotte par son ID et ouvrir le modal d'édition
+        function getFlotteById(id) {
+            $.ajax({
+                url: "/Flottes/Details/" + id,
+                type: "GET",
+                success: function(result) {
+                    $('#editId').val(result.id);
+                    $('#editType').val(result.type);
+                    $('#editMatricule').val(result.matricule);
+                    $('#editEstDisponible').prop('checked', result.estDisponible);
+                    $('#editModal').modal('show');
+                },
+                error: function() {
+                    alert("Erreur lors de la récupération du véhicule.");
+                }
+            });
+        }
+
+        // Modifier une flotte
+        function updateFlotte() {
+            var flotte = {
+                Id: $('#editId').val(),
+                Type: $('#editType').val(),
+                Matricule: $('#editMatricule').val(),
+                EstDisponible: $('#editEstDisponible').is(':checked')
+            };
+
+            // Validation côté client
+            if (!flotte.Type || !flotte.Matricule) {
+                alert("Veuillez remplir tous les champs obligatoires.");
+                return;
+            }
+
+            $.ajax({
+                url: "/Flottes/Edit",
+                type: "PUT",
+                contentType: "application/json",
+                data: JSON.stringify(flotte),
+                success: function() {
+                    $('#editModal').modal('hide');
+                    loadFlottes();
+
+                    // Notification de succès
+                    showNotification("Véhicule mis à jour avec succès !");
+                },
+                error: function(xhr) {
+                    var errorMessage = xhr.responseText || "Erreur lors de la mise à jour du véhicule.";
+                    alert(errorMessage);
+                }
+            });
+        }
+
+        // Supprimer une flotte
+        function deleteFlotte(id) {
+            $.ajax({
+                url: "/Flottes/Delete",
+                type: "POST",
+                data: { id: id },
+                success: function() {
+                    loadFlottes();
+
+                    // Notification de succès
+                    showNotification("Véhicule supprimé avec succès !");
+                },
+                error: function() {
+                    alert("Erreur lors de la suppression du véhicule.");
+                }
+            });
+        }
+
+        // Réinitialiser le formulaire de création
+        function clearCreateForm() {
+            $('#createType').val("");
+            $('#createMatricule').val("");
+            $('#createEstDisponible').prop('checked', true);
+        }
+
+        // Afficher une notification temporaire
+        function showNotification(message) {
+            // Créer un élément de notification
+            var notification = $('<div class="alert alert-success alert-dismissible fade show" role="alert">' +
+                message +
+                '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                '<span aria-hidden="true">&times;</span>' +
+                '</button>' +
+                '</div>');
+
+            // Ajouter au corps du document
+            notification.css({
+                'position': 'fixed',
+                'top': '20px',
+                'right': '20px',
+                'z-index': '9999',
+                'min-width': '300px'
+            }).appendTo('body');
+
+            // Masquer après 3 secondes
+            setTimeout(function() {
+                notification.alert('close');
+            }, 3000);
+        }
+    </script>
+}

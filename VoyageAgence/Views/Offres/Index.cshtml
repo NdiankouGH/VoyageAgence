@@ -1,0 +1,275 @@
+﻿@{
+    ViewData["Title"] = "Offres";
+}
+
+<div class="container">
+    <h2>Offres</h2>
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#myModal" onclick="clearTextBox();">Ajouter une Offre</button><br /><br />
+    <table class="table table-bordered table-hover">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Description</th>
+                <th>Prix</th>
+                <th>Disponible</th>
+                <th>Agence</th>
+                <th>Date de Création</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody class="tbody">
+        </tbody>
+    </table>
+</div>
+
+<div class="modal fade" id="myModal" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalLabel">Ajouter une Offre</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="offreForm">
+                    <input type="hidden" id="Id" name="Id" />
+                    <div class="form-group mb-3">
+                        <label for="Description" class="form-label">Description</label>
+                        <input type="text" class="form-control" id="Description" name="Description" required />
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="Prix" class="form-label">Prix</label>
+                        <input type="number" class="form-control" id="Prix" name="Prix" step="0.01" required />
+                    </div>
+                    <div class="form-check mb-3">
+                        <input type="checkbox" class="form-check-input" id="Disponible" name="Disponible" />
+                        <label class="form-check-label" for="Disponible">Disponible</label>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="AgenceId" class="form-label">Agence</label>
+                        <select class="form-select" id="AgenceId" name="AgenceId" required>
+                            <option value="">-- Sélectionner une agence --</option>
+                        </select>
+                    </div>
+                    <input type="hidden" id="DateCreation" name="DateCreation" />
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="btnAdd" onclick="Add();">Ajouter</button>
+                <button type="button" class="btn btn-primary" id="btnUpdate" style="display:none;" onclick="Update();">Modifier</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            loadData();
+            loadAgences();
+        });
+
+        function loadData() {
+            $.ajax({
+                url: "@Url.Action("Index", "Offres")",
+                type: "GET",
+                success: function (result) {
+                    var html = '';
+                    // Extraire les données des offres du HTML retourné
+                    var tempDiv = $('<div>').html(result);
+                    var offres = tempDiv.find('tbody tr');
+
+                    offres.each(function() {
+                        var tr = $(this);
+                        var id = tr.find('td:eq(0)').text();
+                        var description = tr.find('td:eq(1)').text();
+                        var prix = tr.find('td:eq(2)').text();
+                        var disponible = tr.find('td:eq(3)').text() === "True" ? "Oui" : "Non";
+                        var agence = tr.find('td:eq(4)').text();
+                        var dateCreation = tr.find('td:eq(5)').text();
+
+                        html += '<tr>';
+                        html += '<td>' + id + '</td>';
+                        html += '<td>' + description + '</td>';
+                        html += '<td>' + prix + '</td>';
+                        html += '<td>' + disponible + '</td>';
+                        html += '<td>' + agence + '</td>';
+                        html += '<td>' + dateCreation + '</td>';
+                        html += '<td><a href="#" onclick="getbyID(' + id + ')">Modifier</a> | <a href="#" onclick="Delete(' + id + ')">Supprimer</a></td>';
+                        html += '</tr>';
+                    });
+
+                    $('.tbody').html(html);
+                },
+                error: function (err) {
+                    console.log(err);
+                }
+            });
+        }
+
+        function loadAgences() {
+            $.ajax({
+                url: "@Url.Action("GetAgences", "Offres")",
+                type: "GET",
+                success: function (result) {
+                    var options = '<option value="">-- Sélectionner une agence --</option>';
+                    $.each(result, function (key, item) {
+                        options += '<option value="' + item.id + '">' + item.nom + '</option>';
+                    });
+                    $('#AgenceId').html(options);
+                },
+                error: function (err) {
+                    console.log(err);
+                    // Fallback si l'action GetAgences n'existe pas
+                    $.ajax({
+                        url: "@Url.Action("Create", "Offres")",
+                        type: "GET",
+                        success: function (result) {
+                            var tempDiv = $('<div>').html(result);
+                            var options = tempDiv.find('select[name="AgenceId"]').html();
+                            $('#AgenceId').html(options);
+                        }
+                    });
+                }
+            });
+        }
+
+        function Add() {
+            // Validation côté client
+            if (!$('#offreForm')[0].checkValidity()) {
+                $('#offreForm')[0].reportValidity();
+                return false;
+            }
+
+            var token = $('input[name="__RequestVerificationToken"]').val();
+            var formData = {
+                Description: $('#Description').val(),
+                Prix: $('#Prix').val(),
+                Disponible: $('#Disponible').is(':checked'),
+                AgenceId: $('#AgenceId').val(),
+                DateCreation: new Date().toISOString()
+            };
+
+            $.ajax({
+                url: "@Url.Action("Create", "Offres")",
+                type: "POST",
+                data: formData,
+                headers: {
+                    "RequestVerificationToken": token
+                },
+                success: function () {
+                    loadData();
+                    var myModalEl = document.getElementById('myModal');
+                    var modal = bootstrap.Modal.getInstance(myModalEl);
+                    modal.hide();
+                },
+                error: function (err) {
+                    console.log(err);
+                    alert("Une erreur s'est produite lors de l'ajout de l'offre.");
+                }
+            });
+        }
+
+        function Update() {
+            // Validation côté client
+            if (!$('#offreForm')[0].checkValidity()) {
+                $('#offreForm')[0].reportValidity();
+                return false;
+            }
+
+            var token = $('input[name="__RequestVerificationToken"]').val();
+            var formData = {
+                Id: $('#Id').val(),
+                Description: $('#Description').val(),
+                Prix: $('#Prix').val(),
+                Disponible: $('#Disponible').is(':checked'),
+                AgenceId: $('#AgenceId').val(),
+                DateCreation: $('#DateCreation').val()
+            };
+
+            $.ajax({
+                url: "@Url.Action("Edit", "Offres")" + "/" + formData.Id,
+                type: "POST",
+                data: formData,
+                headers: {
+                    "RequestVerificationToken": token
+                },
+                success: function () {
+                    loadData();
+                    var myModalEl = document.getElementById('myModal');
+                    var modal = bootstrap.Modal.getInstance(myModalEl);
+                    modal.hide();
+                },
+                error: function (err) {
+                    console.log(err);
+                    alert("Une erreur s'est produite lors de la modification de l'offre.");
+                }
+            });
+        }
+
+        function Delete(id) {
+            if (confirm("Voulez-vous supprimer cette offre ?")) {
+                var token = $('input[name="__RequestVerificationToken"]').val();
+
+                $.ajax({
+                    url: "@Url.Action("Delete", "Offres")" + "/" + id,
+                    type: "POST",
+                    headers: {
+                        "RequestVerificationToken": token
+                    },
+                    success: function () {
+                        loadData();
+                    },
+                    error: function (err) {
+                        console.log(err);
+                        alert("Une erreur s'est produite lors de la suppression de l'offre.");
+                    }
+                });
+            }
+        }
+
+        function getbyID(id) {
+            $.ajax({
+                url: "@Url.Action("Edit", "Offres")" + "/" + id,
+                type: "GET",
+                success: function (result) {
+                    var tempDiv = $('<div>').html(result);
+
+                    $('#Id').val(id);
+                    $('#Description').val(tempDiv.find('#Description').val());
+                    $('#Prix').val(tempDiv.find('#Prix').val());
+                    $('#Disponible').prop('checked', tempDiv.find('#Disponible').is(':checked'));
+
+                    // Charger les agences d'abord, puis sélectionner la bonne
+                    loadAgences();
+                    setTimeout(function() {
+                        $('#AgenceId').val(tempDiv.find('#AgenceId').val());
+                    }, 500);
+
+                    $('#DateCreation').val(tempDiv.find('#DateCreation').val());
+
+                    var myModal = new bootstrap.Modal(document.getElementById('myModal'));
+                    myModal.show();
+
+                    $('#btnUpdate').show();
+                    $('#btnAdd').hide();
+                },
+                error: function (err) {
+                    console.log(err);
+                    alert("Une erreur s'est produite lors de la récupération des données de l'offre.");
+                }
+            });
+        }
+
+        function clearTextBox() {
+            $('#Id').val("");
+            $('#Description').val("");
+            $('#Prix').val("");
+            $('#Disponible').prop('checked', false);
+            $('#AgenceId').val("");
+            $('#DateCreation').val("");
+            $('#btnUpdate').hide();
+            $('#btnAdd').show();
+        }
+    </script>
+}

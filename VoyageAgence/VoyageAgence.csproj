@@ -1,0 +1,48 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<UserSecretsId>aspnet-VoyageAgence-d9768d21-a592-41c7-b6ca-2460300ad423</UserSecretsId>
+	</PropertyGroup>
+
+
+
+	<ItemGroup>
+		<PackageReference Include="itext7" Version="9.1.0" />
+		<PackageReference Include="itext7.bouncy-castle-adapter" Version="9.1.0" />
+		<PackageReference Include="libphonenumber-csharp" Version="8.13.55" />
+		<PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="8.0.13" />
+		<PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.13" />
+		<PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="8.0.13" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.13" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.13">
+		  <PrivateAssets>all</PrivateAssets>
+		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.0" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.13">
+		  <PrivateAssets>all</PrivateAssets>
+		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		<PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="8.0.7" />
+		<PackageReference Include="Npgsql" Version="8.0.7" />
+		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.11" />
+
+		<PackageReference Include="System.Text.Json" Version="9.0.2" />
+
+		<PackageReference Include="X.PagedList" Version="10.5.7" />
+
+		<PackageReference Include="X.PagedList.Mvc.Core" Version="10.5.7" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Include="Views\Annonces\Create.cshtml" />
+	  <None Include="Views\Annonces\Delete.cshtml" />
+	  <None Include="Views\Annonces\Details.cshtml" />
+	  <None Include="Views\Annonces\Edit.cshtml" />
+	  <None Include="Views\Annonces\Index.cshtml" />
+	</ItemGroup>
+
+</Project>

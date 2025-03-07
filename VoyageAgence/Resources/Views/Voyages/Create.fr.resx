@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <data name="Create" xml:space="preserve">
+    <value>Créer</value>
+  </data>
+  <data name="Voyage" xml:space="preserve">
+    <value>Voyage</value>
+  </data>
+  <data name="Description" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="DateDepart" xml:space="preserve">
+    <value>Date de départ</value>
+  </data>
+  <data name="DateRetour" xml:space="preserve">
+    <value>Date de retour</value>
+  </data>
+  <data name="Prix" xml:space="preserve">
+    <value>Prix</value>
+  </data>
+  <data name="ChauffeurId" xml:space="preserve">
+    <value>Chauffeur</value>
+  </data>
+  <data name="FlotteId" xml:space="preserve">
+    <value>Flotte</value>
+  </data>
+  <data name="CreateButton" xml:space="preserve">
+    <value>Créer</value>
+  </data>
+  <data name="BackToList" xml:space="preserve">
+    <value>Retour à la liste</value>
+  </data>
+</root>
